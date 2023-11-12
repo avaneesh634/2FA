@@ -20,7 +20,3 @@ func ConnectToDB() {
 		log.Fatal("Failed to connect to DB")
 	}
 }
-
-func Migrate() {
-
-}

@@ -22,3 +22,8 @@ type JWTClaim struct {
 	Email    string `json:"email"`
 	jwt.StandardClaims
 }
+
+type OTPInput struct {
+	Email string `json:"email"`
+	Token string `json:"token"`
+}

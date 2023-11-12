@@ -18,13 +18,14 @@ func init() {
 	}
 	db.ConnectToDB()
 	db.DB.AutoMigrate(&models.User{})
+	db.RedisInit()
 }
 
 func main() {
 	router := gin.Default()
 	router.POST("/signup", controllers.SignUpUser)
-	router.GET("/users", controllers.GetUsers)
 	router.POST("/login", controllers.Login)
 	router.POST("/refreshtoken", controllers.RefreshToken)
+	router.POST("/validateotp", controllers.ValidateOTP)
 	router.Run()
 }
