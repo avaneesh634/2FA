@@ -150,3 +150,51 @@ func Login(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Successfully Logged"})
 }
+
+func RefreshToken(c *gin.Context) {
+	cookie, err := c.Request.Cookie("jwt-token")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			c.JSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": "No token is available"})
+			return
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "Unauthorized cookie"})
+			return
+		}
+	}
+	tokenString := cookie.Value
+	claims := &models.JWTClaim{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+	if err != nil {
+		if err == jwt.ErrSignatureInvalid {
+			c.JSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": "Unauthorized token"})
+			return
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "Bad request"})
+		}
+	}
+
+	if !token.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": "Unauthorized"})
+		return
+	}
+
+	expirationTime := time.Now().Add(time.Minute * 5)
+
+	claims.ExpiresAt = expirationTime.Unix()
+
+	token = jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenStr, err := token.SignedString(jwtKey)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "fail", "error": err.Error()})
+		return
+	}
+
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:    "refreshed-jwt-token",
+		Value:   tokenStr,
+		Expires: expirationTime,
+	})
+}
